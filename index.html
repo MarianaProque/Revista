@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="description" content="Revista GNōSIS — O peso invisível da nuvem. Big Data, colonialismo digital e impactos ambientais.">
+  <meta name="theme-color" content="#9c2621">
+  <title>O peso invisível da nuvem — GNōSIS</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body class="book-reader">
+  <a class="skip-link" href="texto.html">Ler versão em texto contínuo</a>
+  <main class="reader-stage" id="reader-stage" aria-label="Revista em páginas verticais" aria-busy="true">
+    <p class="loading-message" role="status">Preparando a revista…</p>
+  </main>
+  <footer class="reader-footer">
+    <span class="reader-hint">Use as setas ou arraste para virar.</span>
+    <nav class="pager" aria-label="Virar páginas">
+      <button id="previous-page" type="button" disabled aria-label="Virar para a página anterior">Anterior</button>
+      <span id="page-status" role="status" aria-live="polite" aria-atomic="true">Capa</span>
+      <button id="next-page" type="button" disabled aria-label="Virar para a próxima página">Próxima</button>
+    </nav>
+    <a class="text-edition-link" href="texto.html">Leitura em texto</a>
+  </footer>
+  <noscript><p class="noscript-message">A revista animada requer JavaScript. <a href="texto.html">Leia a versão em texto.</a></p></noscript>
+</body>
+</html>
