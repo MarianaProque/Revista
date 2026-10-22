@@ -2,6 +2,86 @@
 const magazine = document.querySelector('.magazine');
 const pages = [...document.querySelectorAll('.page')];
 const pending = new Map();
+// Exact visible photo rectangles in the original 1440×1024 artboards.
+const interactivePhotos = {
+  11: { name: 'Microsoft', className: 'microsoft', src: 'assets/portrait/photo-171.png', staticCaption: { x: 199, y: 546, width: 1042, height: 24 }, caption: 'Visão externa dos pavilhões de data center da Microsoft (Fonte: Microsoft/Reprodução)' },
+  13: { name: 'Google', className: 'google', src: 'assets/portrait/photo-129.png', staticCaption: { x: 771, y: 733, width: 595, height: 39 }, caption: 'Torres de resfriamento de data center do Google em Oregon, Estados Unidos (Fonte: Google/Reprodução)' },
+};
+
+function hideStaticPhotoCaption(page, number) {
+  const region = interactivePhotos[number]?.staticCaption;
+  if (!region) return;
+  // The PDF outlined the fixed captions into grey paths. Hide only those
+  // caption glyphs in the rendered copy, leaving all source SVG files intact.
+  for (const path of page.querySelectorAll('.page__artwork svg path[fill="#4c4c4c"]')) {
+    if (path.closest('defs')) continue;
+    const box = path.getBBox();
+    const matrix = path.getCTM();
+    if (!matrix) continue;
+    const corners = [[box.x, box.y], [box.x + box.width, box.y], [box.x, box.y + box.height], [box.x + box.width, box.y + box.height]]
+      .map(([x, y]) => new DOMPoint(x, y).matrixTransform(matrix));
+    if (corners.every(point => point.x >= region.x - 1 && point.x <= region.x + region.width + 1 && point.y >= region.y - 1 && point.y <= region.y + region.height + 1)) {
+      path.setAttribute('visibility', 'hidden');
+      path.dataset.staticPhotoCaption = 'true';
+    }
+  }
+}
+
+async function addPhotoInteraction(page, number) {
+  const photo = interactivePhotos[number];
+  if (!photo || page.querySelector('.photo-hotspot')) return;
+  const picture = new Image();
+  picture.src = photo.src;
+  picture.alt = '';
+  picture.draggable = false;
+  picture.className = 'photo-hotspot__image';
+  await picture.decode();
+  const layer = document.createElement('div');
+  layer.className = 'page__interactions';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = `photo-hotspot photo-hotspot--${photo.className}`;
+  button.setAttribute('aria-label', `Legenda da foto: ${photo.name}`);
+  button.setAttribute('aria-expanded', 'false');
+  button.setAttribute('aria-controls', `photo-caption-${number}`);
+  const caption = document.createElement('span');
+  caption.className = 'photo-hotspot__caption';
+  caption.id = `photo-caption-${number}`;
+  caption.textContent = photo.caption;
+  caption.setAttribute('aria-hidden', 'true');
+  button.append(picture, caption);
+  layer.append(button);
+  page.append(layer);
+  let hovered = false;
+  let keyboardFocus = false;
+  let pinned = false;
+  let pointerType = '';
+  const update = () => {
+    const open = hovered || keyboardFocus || pinned;
+    button.classList.toggle('is-active', open);
+    button.setAttribute('aria-expanded', String(open));
+    caption.setAttribute('aria-hidden', String(!open));
+  };
+  button.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') { hovered = true; update(); } });
+  button.addEventListener('pointerleave', () => { hovered = false; update(); });
+  button.addEventListener('pointerdown', event => { pointerType = event.pointerType; });
+  button.addEventListener('focus', () => { keyboardFocus = button.matches(':focus-visible'); update(); });
+  button.addEventListener('blur', () => { keyboardFocus = false; pinned = false; update(); });
+  button.addEventListener('click', event => {
+    if (pointerType === 'touch' || event.detail === 0) {
+      const open = button.classList.contains('is-active');
+      keyboardFocus = false;
+      pinned = !open;
+      update();
+    }
+  });
+  button.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { hovered = false; keyboardFocus = false; pinned = false; update(); }
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!button.contains(event.target)) { pinned = false; keyboardFocus = false; update(); }
+  });
+}
 
 function resizeArtwork() {
   magazine.style.setProperty('--page-scale', String(magazine.clientWidth / 1440));
@@ -56,6 +136,8 @@ async function loadPage(page) {
         return picture.decode();
       }));
       page.querySelector('.page__artwork').replaceChildren(svg);
+      hideStaticPhotoCaption(page, number);
+      await addPhotoInteraction(page, number);
       page.querySelector('.page__retry')?.remove();
       delete page.dataset.error;
       page.dataset.loaded = 'true';

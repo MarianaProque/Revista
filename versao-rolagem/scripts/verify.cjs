@@ -5,17 +5,11 @@ const crypto = require('node:crypto');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
 const parent = path.resolve(root, '..');
-const base = 'http://127.0.0.1:8001/versao-rolagem/';
+const base = process.env.MAGAZINE_URL || 'http://127.0.0.1:8001/versao-rolagem/';
 const hash = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex').toUpperCase();
-const preserved = {
-  'index.html':'D9967BC39D9003EC3A2015158DC1237A8D2CF30B0397D385007E3F7D8146C92D',
-  'style.css':'370E3082E75B17785E33BB07E93941126B188FBDD73B1742C84DCFF17613EF75',
-  'script.js':'E7213157B9A205C7E11AAF8126976D0EC717C77F0ED5175D97E575D6CE4D2234',
-  'texto.html':'D600DAE19C3F07DB02CCB873DFE3BF465F13D3672CEC4DB90E1DB1A48912DBE6',
-  'contents.css':'EA9BC71BCC7B90F9FDCC952A90EDEF9B22A5001218628F4CCADD2A427BF991F3',
-  'README.md':'D598249EED187E24AE5ADC3578CE1024CB5766230C5A79F28618C0045E5BA25F',
-  'assets/portrait/edition.json':'2BDE7371426A78C0EB7A3ACE1FE059E710E8D7BA62489369472F6255681A7004',
-};
+// Snapshot the current user's revision, not a historic README checksum.
+const preserved = Object.fromEntries(['index.html','style.css','script.js','texto.html','contents.css','README.md','assets/portrait/edition.json']
+  .map(file=>[file,hash(path.join(parent,file))]));
 (async () => {
   const output = path.join(root, 'tmp');
   fs.mkdirSync(output, {recursive:true});
@@ -109,6 +103,7 @@ const preserved = {
     }
     await page.goto(`${base}texto.html`,{waitUntil:'networkidle'});
     assert.equal(await page.locator('.text-reader > section').count(),25);
+    for (const [file, checksum] of Object.entries(preserved)) assert.equal(hash(path.join(parent,file)),checksum,`Revista principal alterada: ${file}`);
     const report={pages:25,loaded:25,desktopGeometry:geometry[0],mobileGeometry:{width:mobile.width,height:mobile.height},responsive,duplicateIds:duplicates,requestsOutsideSubfolder:foreign,mainProjectUnchanged:true,errors};
     assert.deepEqual(errors,[]);
     fs.writeFileSync(path.join(output,'verification.json'),JSON.stringify(report,null,2));

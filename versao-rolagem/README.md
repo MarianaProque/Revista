@@ -16,6 +16,8 @@ Abra <http://127.0.0.1:8002/>. Use HTTP: as páginas SVG locais são carregadas 
 
 ## Arquivos ativos
 
+As fotos da Microsoft (página 11) e do Google (página 13) reproduzem o hover do protótipo: foto normal inicialmente, escurecimento e legenda branca sobreposta ao passar o ponteiro. As legendas fixas abaixo dessas fotos são ocultadas na cópia renderizada do SVG; a legenda visual aparece somente durante a interação. A interação também funciona com foco de teclado e alternância por toque; Escape ou toque fora fecha a legenda. A posição e o recorte originais são mantidos por camadas HTML locais sobre a arte SVG, sem alterar os arquivos gráficos nem a revista principal. Movimento reduzido desativa a transição.
+
 - `index.html`: as 25 páginas e o sumário original.
 - `style.css`: largura total, proporção original e rolagem contínua.
 - `script.js`: SVGs sob demanda, imagens locais e IDs únicos por página.
